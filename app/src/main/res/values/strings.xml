@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">InfraredTransmitter</string>
+    <string name="ir_send">send IR</string>
+    <string name="ir_get_freqs">get freqs</string>
+</resources>
