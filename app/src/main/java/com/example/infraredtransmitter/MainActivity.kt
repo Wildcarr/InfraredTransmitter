@@ -92,16 +92,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
         var addr = hexPattern.substring(0, 4)
-        var data = hexPattern.substring(4,6)
+        var data = hexPattern.substring(4, 6)
 
 
         val addrEncode = reverseEncode(addr, 4)
         val dataEncode = reverseEncode(data, 2)
-        var dataEncodeComplement = dataEncode.toInt(16).inv().toString(16)
-        dataEncodeComplement = dataEncodeComplement.substring(dataEncodeComplement.length-2,dataEncodeComplement.length)
 
-        val hexPatternEncode = addrEncode + dataEncode + dataEncodeComplement
-        val binaryPatternEncode = addZeroPrefix(hexPatternEncode.toInt(16).toString(2), 32)
+        val dataComplementSb = StringBuilder()
+        val binaryDataEncode = addZeroPrefix(dataEncode.toInt(16).toString(2), 8)
+        binaryDataEncode.forEach {
+            when(it){
+                '0' -> dataComplementSb.append('1')
+                '1' -> dataComplementSb.append('0')
+            }
+        }
+        val dataEncodeComplement = addZeroPrefix(dataComplementSb.toString().toInt(2).toString(16), 2)
+
+        val hexPatternEncode = (addrEncode + dataEncode + dataEncodeComplement).uppercase(Locale.getDefault())
+        val binaryPatternEncode = addZeroPrefix(hexPatternEncode.toLong(16).toString(2), 32)
 
         val res = arrayListOf(9000, 4500)
         res.apply {
