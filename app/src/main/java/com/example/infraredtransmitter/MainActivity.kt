@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -18,6 +19,8 @@ class MainActivity : AppCompatActivity() {
         mCIR = getSystemService(Context.CONSUMER_IR_SERVICE) as ConsumerIrManager
         mFreqsText = findViewById(R.id.textView)
         initViewsAndEvents()
+
+        hexPattern2IntArray("1234AB")
     }
 
     fun initViewsAndEvents(){
@@ -73,6 +76,76 @@ class MainActivity : AppCompatActivity() {
             )
         }
         mFreqsText.text = b.toString() // 显示结果
+    }
+
+    /*
+     * 输入作为解码结果的6位16进制码，输出对应的NEC int数组编码，用于ConsumerIrManager的transmit方法
+     * 如果输入不合法，返回空串
+     */
+    fun hexPattern2IntArray(hexPattern: String):IntArray{
+        if(hexPattern.length != 6){
+            return intArrayOf()
+        }
+        hexPattern.forEach {
+            if(!isHexChar(it)){
+                return intArrayOf()
+            }
+        }
+        var addr = hexPattern.substring(0, 4)
+        var data = hexPattern.substring(4,6)
+
+
+        val addrEncode = reverseEncode(addr, 4)
+        val dataEncode = reverseEncode(data, 2)
+        var dataEncodeComplement = dataEncode.toInt(16).inv().toString(16)
+        dataEncodeComplement = dataEncodeComplement.substring(dataEncodeComplement.length-2,dataEncodeComplement.length)
+
+        val hexPatternEncode = addrEncode + dataEncode + dataEncodeComplement
+        val binaryPatternEncode = addZeroPrefix(hexPatternEncode.toInt(16).toString(2), 32)
+
+        val res = arrayListOf(9000, 4500)
+        res.apply {
+            binaryPatternEncode.forEach {
+                when(it){
+                    '0' -> {
+                        add(560)
+                        add(560)
+                    }
+                    '1' -> {
+                        add(560)
+                        add(1680)
+                    }
+                }
+            }
+            add(560)
+            add(20000)
+        }
+        println("The hex encoding is $hexPatternEncode !")
+        return res.toIntArray()
+    }
+
+    fun reverseEncode(addr: String, hexLen: Int): String {
+        var tmp = addr.toInt(16).toString(2)
+        while (tmp.length < hexLen*4) {
+            tmp = "0$tmp"
+        }
+        var res = tmp.reversed().toInt(2).toString(16)
+        while (res.length < hexLen) {
+            res = "0$res"
+        }
+        return res
+    }
+
+    fun isHexChar(c: Char):Boolean{
+        return c in '0'..'9' || c in 'A'..'F'
+    }
+
+    fun addZeroPrefix(s: String, len: Int): String{
+        val sb = StringBuilder(s)
+        while(sb.length < len){
+            sb.insert(0,'0')
+        }
+        return sb.toString()
     }
 
 }
